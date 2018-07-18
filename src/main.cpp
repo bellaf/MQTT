@@ -3,6 +3,9 @@ This sketch connects to my MQTT broker, reads the temperature from
 a Dallas DS1820B on PIN 5, then publishes it to a random temperature_topic
 It also then displays the temprerature on the OLED display.
 
+OLED display uses I2C, on default Wemos SDA and SCL pins
+
+
 Written by Tony Bell
 17/7/2018
 
