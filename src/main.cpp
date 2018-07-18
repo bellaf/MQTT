@@ -15,7 +15,6 @@
 #define mqtt_user "admin"
 #define mqtt_password "dune99"
 
-#define humidity_topic "sensor/humidity"
 #define temperature_topic "sensor/temperature"
 
 #define ONE_WIRE_BUS 14 // which pin the ds1820b is on...
@@ -96,11 +95,9 @@ bool checkBound(float newValue, float prevValue, float maxDiff) {
          (newValue < prevValue - maxDiff || newValue > prevValue + maxDiff);
 }
 
-
-
 void setup() {
 
-  sensors.begin();        // Start the DS temp sensors
+  sensors.begin();                            // Start the DS temp sensors
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
   Serial.begin(115200);
 
