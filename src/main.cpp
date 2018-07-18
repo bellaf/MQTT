@@ -1,3 +1,13 @@
+/*
+This sketch connects to my MQTT broker, reads the temperature from
+a Dallas DS1820B on PIN 5, then publishes it to a random temperature_topic
+It also then displays the temprerature on the OLED display.
+
+Written by Tony Bell
+17/7/2018
+
+*/
+
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
