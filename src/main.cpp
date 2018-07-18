@@ -5,32 +5,41 @@
 #include <PubSubClient.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
-#define wifi_ssid "YOUR WIFI SSID"
-#define wifi_password "WIFI PASSWORD"
+#define wifi_ssid "PLUSNET-G3MF"
+#define wifi_password "zenith(99)"
 
-#define mqtt_server "YOUR_MQTT_SERVER_HOST"
-#define mqtt_user "your_username"
-#define mqtt_password "your_password"
+#define mqtt_server "pi3.lan"
+#define mqtt_user "admin"
+#define mqtt_password "dune99"
 
 #define humidity_topic "sensor/humidity"
 #define temperature_topic "sensor/temperature"
 
-WiFiClient espClient;
-PubSubClient client(espClient);
+#define ONE_WIRE_BUS 14
+#define OLED_RESET 0  // GPIO0
 
-// Decalre Variables and Pins here....
+//Setup wifi stack
+WiFiClient espClient;
+//Setup MQTT client
+PubSubClient client(espClient);
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
+
+// Declare Variables and Pins here....
 
 long lastMsg = 0;
 float temp = 0.0;
-float hum = 0.0;
 float diff = 1.0;
 
-int DS1820PIN = 5;  //onewire pin for DS1820 Sensor
-
 // Create a display object
+// SCL GPIO5
+// SDA GPIO4
 
-#define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
 void setup_wifi() {
@@ -40,28 +49,27 @@ void setup_wifi() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
-  display.print("Connecting to: ");
-  display.println(wifi_ssid);
+  display.println("Connecting to: ");
+  display.print(wifi_ssid);
   display.display();
-  delay(2000);
-  display.clearDisplay();
-
   // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(wifi_ssid);
 
   WiFi.begin(wifi_ssid, wifi_password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    display.print(".");
+    display.display();
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  display.setCursor(0,0);
+  display.clearDisplay();
+  display.println("WiFi connected");
+  display.println("IP address: ");
+  display.println(WiFi.localIP());
+  display.display();
+  delay(1000);
+
 }
 
 void reconnect() {
@@ -92,15 +100,15 @@ bool checkBound(float newValue, float prevValue, float maxDiff) {
 
 void setup() {
 
-  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+  sensors.begin();        // Start the DS temp sensors
+
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
-  // init done
 
   // Show image buffer on the display hardware.
   // Since the buffer is intialized with an Adafruit splashscreen
   // internally, this will display the splashscreen.
   display.display();
-  delay(2000);
+  delay(1000);
 
   // Clear the buffer.
   display.clearDisplay();
@@ -108,9 +116,8 @@ void setup() {
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
-
   // Set SDA and SDL ports
-  Wire.begin(2, 14);
+//  Wire.begin(2, 14);
 }
 
 void loop() {
@@ -118,27 +125,39 @@ void loop() {
     reconnect();
   }
   client.loop();
+  // call sensors.requestTemperatures() to issue a global temperature
+  // request to all devices on the bus
+  Serial.print("Requesting temperatures...");
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  Serial.println("DONE");
+  // After we got the temperatures, we can print them here.
+  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
+  Serial.print("Temperature for the device 1 (index 0) is: ");
+  Serial.println(sensors.getTempCByIndex(0),1);
 
-/*  long now = millis();
-  if (now - lastMsg > 1000) {
+  // Now lets disply the result on the OLED
+  display.clearDisplay();
+  display.setTextSize(3);
+  display.setTextColor(WHITE);
+  display.setCursor(10,3);
+  display.print(sensors.getTempCByIndex(0),1);
+  display.print((char)247); // degree symbol
+  display.setTextSize(2);
+  display.println("C");
+  display.display();
+  delay(1000);
+
+  long now = millis();
+  if (now - lastMsg > 2000) {
     lastMsg = now;
 
-    float newTemp = hdc.readTemperature();
-//    float newHum = hdc.readHumidity();
+    float newTemp = sensors.getTempCByIndex(0);
 
     if (checkBound(newTemp, temp, diff)) {
       temp = newTemp;
       Serial.print("New temperature:");
       Serial.println(String(temp).c_str());
       client.publish(temperature_topic, String(temp).c_str(), true);
-    }
-
-    if (checkBound(newHum, hum, diff)) {
-      hum = newHum;
-      Serial.print("New humidity:");
-      Serial.println(String(hum).c_str());
-      client.publish(humidity_topic, String(hum).c_str(), true);
-    }
-  */
-
-  }
+   }
+ }
+}
