@@ -28,8 +28,24 @@ float diff = 1.0;
 
 int DS1820PIN = 5;  //onewire pin for DS1820 Sensor
 
+// Create a display object
+
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+
 void setup_wifi() {
   delay(10);
+
+  // text display tests
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.print("Connecting to: ");
+  display.println(wifi_ssid);
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+
   // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
@@ -76,6 +92,18 @@ bool checkBound(float newValue, float prevValue, float maxDiff) {
 
 void setup() {
 
+  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
+  // init done
+
+  // Show image buffer on the display hardware.
+  // Since the buffer is intialized with an Adafruit splashscreen
+  // internally, this will display the splashscreen.
+  display.display();
+  delay(2000);
+
+  // Clear the buffer.
+  display.clearDisplay();
 
   Serial.begin(115200);
   setup_wifi();
