@@ -18,7 +18,7 @@
 #define humidity_topic "sensor/humidity"
 #define temperature_topic "sensor/temperature"
 
-#define ONE_WIRE_BUS 14
+#define ONE_WIRE_BUS 14 // which pin the ds1820b is on...
 #define OLED_RESET 0  // GPIO0
 
 //Setup wifi stack
@@ -30,7 +30,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-// Declare Variables and Pins here....
+// Declare Variables here....
 
 long lastMsg = 0;
 float temp = 0.0;
@@ -101,23 +101,14 @@ bool checkBound(float newValue, float prevValue, float maxDiff) {
 void setup() {
 
   sensors.begin();        // Start the DS temp sensors
-
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
-
-  // Show image buffer on the display hardware.
-  // Since the buffer is intialized with an Adafruit splashscreen
-  // internally, this will display the splashscreen.
-  display.display();
-  delay(1000);
+  Serial.begin(115200);
 
   // Clear the buffer.
   display.clearDisplay();
 
-  Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
-  // Set SDA and SDL ports
-//  Wire.begin(2, 14);
 }
 
 void loop() {
@@ -136,28 +127,29 @@ void loop() {
   Serial.println(sensors.getTempCByIndex(0),1);
 
   // Now lets disply the result on the OLED
-  display.clearDisplay();
-  display.setTextSize(3);
-  display.setTextColor(WHITE);
-  display.setCursor(10,3);
-  display.print(sensors.getTempCByIndex(0),1);
-  display.print((char)247); // degree symbol
-  display.setTextSize(2);
-  display.println("C");
-  display.display();
-  delay(1000);
 
-  long now = millis();
+
+  long now = millis();                          //  Only check the temp every 2 seconds
   if (now - lastMsg > 2000) {
     lastMsg = now;
 
     float newTemp = sensors.getTempCByIndex(0);
 
-    if (checkBound(newTemp, temp, diff)) {
+    if (checkBound(newTemp, temp, diff)) {      // check if the temp has changed
       temp = newTemp;
       Serial.print("New temperature:");
       Serial.println(String(temp).c_str());
       client.publish(temperature_topic, String(temp).c_str(), true);
+      display.clearDisplay();
+      display.setTextSize(3);
+      display.setTextColor(WHITE);
+      display.setCursor(10,3);
+      display.print(temp,1);
+      display.print((char)247); // degree symbol
+      display.setTextSize(2);
+      display.println("C");
+      display.display();
+      delay(1000);
    }
  }
 }
