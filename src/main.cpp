@@ -6,7 +6,7 @@ It also then displays the temprerature on the OLED display.
 OLED display uses I2C, on default Wemos SDA and SCL pins
 
 
-Written by Tony Bell
+Written by Tony Bell (with help from lots of other clever people!)
 17/7/2018
 
 */
