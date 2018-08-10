@@ -17,7 +17,7 @@ Written by Tony Bell (with help from lots of other clever people!)
 #include <Wire.h>
 #include <PubSubClient.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SSD1306.h>   // Consider using a different library, text only....
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -36,14 +36,11 @@ Written by Tony Bell (with help from lots of other clever people!)
 #define ONE_WIRE_BUS 14 // which pin the ds1820b is on...
 #define OLED_RESET 0  // GPIO0
 
-//Setup wifi stack
-WiFiClient espClient;
-//Setup MQTT client
-PubSubClient client(espClient);
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
-// Pass our oneWire reference to Dallas Temperature.
-DallasTemperature sensors(&oneWire);
+
+WiFiClient espClient;                  //Setup wifi stack
+PubSubClient client(espClient);        //Setup MQTT client
+OneWire oneWire(ONE_WIRE_BUS);         // Setup a oneWire instance to communicate with any OneWire devices
+DallasTemperature sensors(&oneWire);   // Pass our oneWire reference to Dallas Temperature.
 
 // Declare Variables here....
 
@@ -98,6 +95,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
+
+//  This bit doesnt work, its a graphics screen, and so prints Characyters in "transparent mode" see
+//  Arduino forums for a work around, or use a differtn text based library
 
   display.setTextSize(1);
   display.setCursor(0,0);
