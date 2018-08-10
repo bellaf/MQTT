@@ -13,6 +13,7 @@ Written by Tony Bell (with help from lots of other clever people!)
 
 #include <Arduino.h>
 
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include <PubSubClient.h>
@@ -21,17 +22,18 @@ Written by Tony Bell (with help from lots of other clever people!)
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-//#define wifi_ssid "PLUSNET-G3MF"
-//#define wifi_password "zenith(99)"
-#define wifi_ssid "TP-LINK_6F2267"
-#define wifi_password "026F2267"
+#define wifi_ssid "PLUSNET-G3MF"
+#define wifi_password "zenith(99)"
+//#define wifi_ssid "TP-LINK_6F2267"
+//#define wifi_password "026F2267"
 
-//#define mqtt_server "pi3.lan"
-#define mqtt_server "test.mosquitto.org"
-//#define mqtt_user "admin"
-//#define mqtt_password "dune99"
+#define mqtt_server "pi3.lan"
+//#define mqtt_server "test.mosquitto.org"
+#define mqtt_user "admin"
+#define mqtt_password "dune99"
 
-#define temperature_topic "sensor/temperature"
+#define publish_local_topic "local/temperature"
+#define subscribe_topic "tele/sonoff/SENSOR"
 
 #define ONE_WIRE_BUS 14 // which pin the ds1820b is on...
 #define OLED_RESET 0  // GPIO0
@@ -47,6 +49,8 @@ DallasTemperature sensors(&oneWire);   // Pass our oneWire reference to Dallas T
 long lastMsg = 0;
 float temp = 0.0;
 float diff = 1.0;
+
+char json[300];
 
 // Create a display object
 // SCL GPIO5
@@ -87,39 +91,34 @@ void setup_wifi() {
 void callback(char* topic, byte* payload, unsigned int length) {
   // once its working, write it all to the OLED Screen rather than the serial port...
   // Display all received messages in little text, only the payload, not the topic.
+  // Declare the jsonbuffer here, it needs to be collapsed after use...
+  
+  StaticJsonBuffer<300> jsonBuffer;
 
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
   for (unsigned int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
-  }
+    json[i]=payload[i];
+    }
+    Serial.print(json);
+
+    // Now convert the json buffer to a parsed JSON object
+    JsonObject& root = jsonBuffer.parseObject(json);
+
+    // Test if parsing succeeds.
+    if (!root.success()) {
+      Serial.println("parseObject() failed");
+      return;
+    }
+ root.prettyPrintTo(Serial);
+
+
   Serial.println();
 
 //  This bit doesnt work, its a graphics screen, and so prints Characyters in "transparent mode" see
 //  Arduino forums for a work around, or use a differtn text based library
-
-  display.setTextSize(1);
-  display.setCursor(0,0);
-  // clear the message line first...
-  for (unsigned int i = 0; i < 21; i++) {
-    display.print(" ");
-  }
-  display.println();
-  display.display();
-
-/*display.setCursor(0,0);
-  for (unsigned int i = 0; i < length; i++) {
-    display.print((char)payload[i]);
-  }
-  */
-
-  display.setCursor(0,0);
-    for (unsigned int i = 0; i < 21; i++) {
-      display.print((char)payload[i]);
-    }
-    display.println();
-  display.display();
 
 
 }
@@ -131,10 +130,13 @@ void reconnect() {
     // Attempt to connect
     // If you do not want to use a username and password, change next line to
     // if (client.connect("ESP8266Client")) {
-    //if (client.connect("ESP8266Client", mqtt_user, mqtt_password)) {
-    if (client.connect("ESP8266Client")) {
-      Serial.println("connected");
-      client.subscribe("#");              // and re-subscribe to a "topic"
+    if (client.connect("ESP8266Client", mqtt_user, mqtt_password)) {
+    //if (client.connect("ESP8266Client")) {
+      Serial.println("MQTT: connected");
+      Serial.print("Subscribing to: ");
+      Serial.println(subscribe_topic);
+
+      client.subscribe(subscribe_topic);              // and re-subscribe to a "topic"
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -196,7 +198,7 @@ void loop() {
       temp = newTemp;
       Serial.print("New temperature:");
       Serial.println(String(temp).c_str());
-      client.publish(temperature_topic, String(temp).c_str(), true);
+      client.publish(publish_local_topic, String(temp).c_str(), true);
       display.clearDisplay();
       display.setTextSize(2);
       display.setTextColor(WHITE);
