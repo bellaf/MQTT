@@ -13,7 +13,7 @@ Written by Tony Bell (with help from lots of other clever people!)
 
 #include <Arduino.h>
 
-#include <ArduinoJson.h>
+#include <ArduinoJson.h>        // For parsing messages from MQTT
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include <PubSubClient.h>
@@ -35,7 +35,7 @@ Written by Tony Bell (with help from lots of other clever people!)
 #define publish_local_topic "local/temperature"
 #define subscribe_topic "tele/sonoff/SENSOR"
 
-#define ONE_WIRE_BUS 14 // which pin the ds1820b is on...
+#define ONE_WIRE_BUS 14 // which pin the ds18b20 is on...
 #define OLED_RESET 0  // GPIO0
 
 
@@ -49,7 +49,8 @@ DallasTemperature sensors(&oneWire);   // Pass our oneWire reference to Dallas T
 long lastMsg = 0;
 float temp = 0.0;
 float diff = 1.0;
-
+float Temp1;
+float Temp2;
 char json[300];
 
 // Create a display object
@@ -65,6 +66,9 @@ void setup_wifi() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
+  Serial.println();
+  Serial.println("Connecting to: ");
+  Serial.print(wifi_ssid);
   display.println("Connecting to: ");
   display.print(wifi_ssid);
   display.display();
@@ -75,11 +79,14 @@ void setup_wifi() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     display.print(".");
+    Serial.print(".");
     display.display();
   }
 
   display.setCursor(0,0);
   display.clearDisplay();
+  Serial.print("WiFi Connected, IP Address: ");
+  Serial.println(WiFi.localIP());
   display.println("WiFi connected");
   display.println("IP address: ");
   display.println(WiFi.localIP());
@@ -92,19 +99,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // once its working, write it all to the OLED Screen rather than the serial port...
   // Display all received messages in little text, only the payload, not the topic.
   // Declare the jsonbuffer here, it needs to be collapsed after use...
-  
+
   StaticJsonBuffer<300> jsonBuffer;
 
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
+  Serial.print("Message arrived...");
+
   for (unsigned int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
     json[i]=payload[i];
     }
-    Serial.print(json);
-
-    // Now convert the json buffer to a parsed JSON object
+      // Now convert the json buffer to a parsed JSON object
     JsonObject& root = jsonBuffer.parseObject(json);
 
     // Test if parsing succeeds.
@@ -112,14 +116,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
       Serial.println("parseObject() failed");
       return;
     }
- root.prettyPrintTo(Serial);
 
+    // now try and extract the temperature ..... good luck!
+
+Serial.println();
+
+    Temp1 = root["DS18x20"]["DS1"]["Temperature"];
+    Temp2 = root["DS18x20"]["DS2"]["Temperature"];
 
   Serial.println();
-
-//  This bit doesnt work, its a graphics screen, and so prints Characyters in "transparent mode" see
-//  Arduino forums for a work around, or use a differtn text based library
-
 
 }
 
@@ -194,21 +199,32 @@ void loop() {
 
     float newTemp = sensors.getTempCByIndex(0);
 
-    if (checkBound(newTemp, temp, diff)) {      // check if the temp has changed
+    // if (checkBound(newTemp, temp, diff)) {      // check if the temp has changed
       temp = newTemp;
       Serial.print("New temperature:");
       Serial.println(String(temp).c_str());
       client.publish(publish_local_topic, String(temp).c_str(), true);
       display.clearDisplay();
-      display.setTextSize(2);
+      display.setTextSize(1);
       display.setTextColor(WHITE);
-      display.setCursor(30,15);
+      display.setCursor(0,0);
+      display.print("Local: ");
       display.print(temp,1);
       display.print((char)247); // degree symbol
-      display.setTextSize(2);
+      display.setTextSize(1);
+      display.println("C");
+      display.print("  DS1: ");
+      display.print(Temp1,1);
+      display.print((char)247); // degree symbol
+      display.setTextSize(1);
+      display.println("C");
+      display.print("  DS2: ");
+      display.print(Temp2,1);
+      display.print((char)247); // degree symbol
+      display.setTextSize(1);
       display.println("C");
       display.display();
       delay(1000);
-   }
+   // }
  }
 }
