@@ -52,6 +52,7 @@ float diff = 1.0;
 float Temp1;
 float Temp2;
 char json[300];
+char DateTime;
 
 // Create a display object
 // SCL GPIO5
@@ -102,27 +103,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   StaticJsonBuffer<300> jsonBuffer;
 
-  Serial.print("Message arrived...");
-
-  for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    json[i]=payload[i];
-    }
-      // Now convert the json buffer to a parsed JSON object
-    JsonObject& root = jsonBuffer.parseObject(json);
+  Serial.println("Message arrived...");
+// Messages arrive in the "payload" buffer from MQTT, so simply Parse it straight through...
+// Now convert the json buffer to a parsed JSON object
+    JsonObject& root = jsonBuffer.parseObject(payload);
 
     // Test if parsing succeeds.
     if (!root.success()) {
-      Serial.println("parseObject() failed");
+      Serial.println("parseObject() failed, probably the buffer isnt big enough");
       return;
     }
 
     // now try and extract the temperature ..... good luck!
 
-Serial.println();
+    root.prettyPrintTo(Serial);
 
     Temp1 = root["DS18x20"]["DS1"]["Temperature"];
     Temp2 = root["DS18x20"]["DS2"]["Temperature"];
+    DateTime = root["Time"];
 
   Serial.println();
 
@@ -182,8 +180,6 @@ void loop() {
   //Serial.print("Requesting temperatures...");
   sensors.requestTemperatures(); // Send the command to get temperatures
 
-  //Serial.println("DONE");
-
   // After we got the temperatures, we can print them here.
   // We use the function ByIndex, and as an example get the temperature from the first sensor only.
 
@@ -192,8 +188,7 @@ void loop() {
 
   // Now lets disply the result on the OLED and publish it to MQTT
 
-
-  long now = millis();                          //  Only check the temp every 2 seconds
+  long now = millis();                          //  Only check the temp every 5 seconds
   if (now - lastMsg > 5000) {
     lastMsg = now;
 
@@ -223,6 +218,8 @@ void loop() {
       display.print((char)247); // degree symbol
       display.setTextSize(1);
       display.println("C");
+      Serial.println(DateTime);
+      display.println(DateTime);
       display.display();
       delay(1000);
    // }
