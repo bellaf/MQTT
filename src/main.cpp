@@ -52,7 +52,7 @@ float diff = 1.0;
 float Temp1;
 float Temp2;
 char json[300];
-char DateTime;
+const char* Date; // must use const char*'s to extract strings from JSON object
 
 // Create a display object
 // SCL GPIO5
@@ -114,16 +114,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
       return;
     }
 
-    // now try and extract the temperature ..... good luck!
+  // now try and extract the temperature ..... good luck!
+  //  root.prettyPrintTo(Serial);
 
-    root.prettyPrintTo(Serial);
-
-    Temp1 = root["DS18x20"]["DS1"]["Temperature"];
+    Date = root["Time"]; //Date and time are the first entry in the JSON string
+    Temp1 = root["DS18x20"]["DS1"]["Temperature"]; // use the square brackets to address the nested parts of the JSON String
     Temp2 = root["DS18x20"]["DS2"]["Temperature"];
-    DateTime = root["Time"];
 
-  Serial.println();
-
+  Serial.print("The value of Date from the root array is: ");
+    Serial.println(Date);
 }
 
 void reconnect() {
@@ -160,14 +159,11 @@ void setup() {
   sensors.begin();                            // Start the DS temp sensors
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
   Serial.begin(115200);
-
   // Clear the buffer.
   display.clearDisplay();
-
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);               // Creat the callback function for Subscribed messages to arrive on
-
 }
 
 void loop() {
@@ -218,8 +214,7 @@ void loop() {
       display.print((char)247); // degree symbol
       display.setTextSize(1);
       display.println("C");
-      Serial.println(DateTime);
-      display.println(DateTime);
+      display.println(Date);
       display.display();
       delay(1000);
    // }
