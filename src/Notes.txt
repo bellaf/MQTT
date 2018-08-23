@@ -1,0 +1,23 @@
+Code build note, featured to include, things to be done etc etc..
+
+Ref info:
+
+Wemos Pin assignments for thermostat:
+
+D3 GPIO0: btn_Up
+TX GPIO1:
+D4 GPIO2: btn_Down
+RX GPIO3:
+D2 GPIO4: CS (SPI Chip Select)
+D1 GPIO5: D/C (SPI Data / Command line)
+D6 GPIO12: MISO (SPI)
+D7 GPIO13: MOSI (SPI)
+D5 GPIO14: SCL (SPI Clock)
+D8 GPIO15: Free
+D0 GPIO16: Free
+
+Things to do:
+- Sort out clear value areas ONLY , not the painted areas.
+- set some button up and down limits for the setpoint, perhaps 10 degrees min, 30 degrees max? (See the example sketches for the
+  JC_Button object
+-
