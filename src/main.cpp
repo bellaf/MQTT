@@ -45,12 +45,10 @@ Written by Tony Bell (with help from lots of other clever people!)
 #define mqtt_password "dune99"
 
 #define publish_local_topic "local/temperature"
+#define publish_relay "cmnd/Test/power4"
 #define subscribe_topic "tele/Test/SENSOR"          /// get temp readings from node called Test ...
 
-#define ONE_WIRE_BUS 16 // which pin the ds18b20 is on... D5=GPIO14, D0=GPIO16, D3=GPIO0
-
-
-
+#define ONE_WIRE_BUS 2 // which pin the ds18b20 is on... D5=GPIO14, D0=GPIO16, D3=GPIO0
 
 
 // Declare Variables here....
@@ -58,11 +56,13 @@ const byte
  up_Pin = 2,
  down_Pin = 0;
 
+char _value[10]; // used to hold temp str buffer for dtostr() func
+
 long lastMsg = 0;
 float Current_temp = 0.0;
 float Set_point = 18;         // Default Set points
-float Night_set_temp = 14;  // Set night set point
-float diff = 1.0;
+float Set_back = 14;          // Set night set point
+float diff = 0.2;
 float Temp1;
 float Temp2;
 char json[300];
@@ -71,7 +71,7 @@ int rotation = 1;   // set the screen orientation mode
 long oldPosition  = -999;  // for Rotary encoder use....
 bool has_changed = 0; //  Has the encoder position changed?
 bool Night_set_back = 0;  // Default is NOT Night Setback mode
-bool Heating_state = 0;   //  0=FALSE=OFF 1=TRUE=once    -  Relay state to control the heating
+bool Heating = 0;   //  0=FALSE=OFF 1=TRUE=on    -  Relay state to control the heating
 
 // Now instatiate objects:
 
@@ -99,17 +99,43 @@ uint8_t radius = 10;
 
 // create Origin start points in each box
 int x=0, y=1, w=2, h=3, origin=4;  // generic variables to index into the cordinate array 0-4
+int MB_split = 60;                  //  sets the split point for the Msg box width
 
-long Big_box_x=10, Big_box_y=10, Big_box_w=200, Big_box_h=110;
-long Button_box_x=220, Button_box_y=10, Button_box_w=85, Button_box_h=220;
-long Msg_box_x=10, Msg_box_y=Big_box_h + Big_box_y + 5, Msg_box_w=200,Msg_box_h=100;
+long Big_box_x=10,      Big_box_y=10,                         Big_box_w=200,    Big_box_h=110;
+long Button_box_x=220,  Button_box_y=10,                      Button_box_w=85,  Button_box_h=220;
+long Msg_box_x=10,      Msg_box_y=Big_box_h + Big_box_y + 5,  Msg_box_w=200,    Msg_box_h=100;
 
-long Big_box_origin_x = Big_box_x + 30, Big_box_origin_y = Big_box_y + 30;
-long Msg_box_origin_x = Msg_box_x + 20, Msg_box_origin_y = Msg_box_y +20;
+long  Big_box_origin_x = Big_box_x + 30,
+      Big_box_origin_y = Big_box_y + 30;
+
+long  Msg_box_origin_x = Msg_box_x + 6,
+      Msg_box_origin_y = Msg_box_y + 6;
 
 
-long Msg_box_value_x = Msg_box_origin_x + (Msg_box_w / 2)+5, Msg_box_value_y = Msg_box_origin_y;
-        long Msg_box_value_w = (Msg_box_w / 2)+5, Msg_box_value_h = Msg_box_h ;
+long Msg_box_value_x = Msg_box_origin_x + (Msg_box_w / 2)+5, Msg_box_value_y = Msg_box_origin_y,
+      Msg_box_value_w = (Msg_box_w / 2)+5, Msg_box_value_h = Msg_box_h ;
+
+long  MB_text_line1_x = Msg_box_origin_x,
+      MB_text_line1_y = Msg_box_origin_y,
+      MB_text_line1_w = Msg_box_w - MB_split - 1,
+      MB_text_line1_h = 22;
+
+long  MB_text_line2_x = Msg_box_origin_x,
+      MB_text_line2_y = MB_text_line1_y + 22,
+      MB_text_line2_w = Msg_box_w - MB_split - 1,
+      MB_text_line2_h = 22;
+
+long  MB_text_line3_x = Msg_box_origin_x,
+      MB_text_line3_y = MB_text_line2_y + 22,
+      MB_text_line3_w = Msg_box_w - MB_split - 1,
+      MB_text_line3_h = 22;
+
+long  MB_text_line4_x = Msg_box_origin_x,
+      MB_text_line4_y = MB_text_line3_y + 22,
+      MB_text_line4_w = Msg_box_w - MB_split - 1,
+      MB_text_line4_h = 22;
+
+
 
 long Up_button_x = Button_box_x + 3;
 long Up_button_y = Button_box_y + 3;
@@ -126,35 +152,6 @@ long Middle_up_y = Up_button_y + (Up_button_h / 2);
 long Middle_down_x = Down_button_x + (Down_button_w / 2);
 long Middle_down_y = Down_button_y + (Down_button_h / 2);
 
-/* Declare SCreen array to hold co-ords for the x, y, w and h for each screen. 10 rows each of 4 co-ords.
-Rows (Screen number):
-0 - Big_box is the main temp display area
-1 - Button_box is the display area for the buttons
-2 - Msg_box is the Status and display area at the bottom left of the SCreen
-3 - Msg_box_value is the output are of the Msg box..... and is also the start of the printing orign as well
-
-Columns (Parameter for draw commands):
-0 - x
-1 - y
-2 - w
-3 - h
-4 - origin x (Start of printable area)
-5 - origin y
-
-*/
-
-// Now create an array to hold all these values, and then the following syntax
-// can be used to reference each screen are:
-// fillBlablah (Screen[1][x], Screen[1][y], Screen[1][w],Screen[1],[h])
-
-long Screen [7][6]={
-
-  {Big_box_x       , Big_box_y       , Big_box_w       , Big_box_h,       Big_box_origin_x, Big_box_origin_y },
-  {Button_box_x    , Button_box_y    , Button_box_w    , Button_box_h,    0, 0},
-  {Msg_box_x       , Msg_box_y       , Msg_box_w       , Msg_box_h,       Msg_box_origin_x, Msg_box_origin_y},
-  {Msg_box_value_x , Msg_box_value_y , Msg_box_value_w , Msg_box_value_h, Msg_box_value_x,  Msg_box_value_y }
-
-};
 
 void setup_wifi() {
   delay(10);
@@ -217,44 +214,78 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Temp1 = root["DS18x20"]["DS1"]["Temperature"]; // use the square brackets to address the nested parts of the JSON String
     Temp2 = root["DS18x20"]["DS2"]["Temperature"];
 }
-void clear_Bigbox(){
-  // Variables: Big_box_x
-  display.fillRect(Big_box_x+6, Big_box_y+6, Big_box_w-10, Big_box_h-10,ILI9341_BLACK);
-}
 
 void clear_Buttonbox(){
   display.fillRect(Button_box_x+6, Button_box_y+6, Button_box_w-10, Button_box_h-10,ILI9341_BLACK);
 }
 
-void clear_Msgbox(){
-  display.fillRect(Msg_box_x+6, Msg_box_y+6, Msg_box_w-10, Msg_box_h-10,ILI9341_BLACK);
-}
 
-void clear_values_area(){
-    display.fillRect(Msg_box_value_x, Msg_box_value_y, Msg_box_value_w, Msg_box_value_h, ILI9341_BLACK);
+// used to display message on one of the msg lines
+void Msg_out(int line, char* msg, char* value){
 
-}
-
-void display_Setpoint(){
-  clear_Msgbox();
   display.setFont(&FreeSans9pt7b);
-  display.setCursor(Msg_box_origin_x + (Msg_box_w / 2)+5, Msg_box_origin_y);
-  display.print(Set_point,1);
-  display.print((char)247); // degree symbol
-  display.print("c");
+
+  switch (line) {
+    case 1:
+      if (strlen(msg)!=0){
+        display.setCursor(MB_text_line1_x, MB_text_line1_y + 15);
+        display.fillRect(MB_text_line1_x, MB_text_line1_y, MB_text_line1_w, MB_text_line1_h, ILI9341_BLACK);
+        display.print(msg);
+      }
+      if (strlen(value)!=0){
+        display.setCursor(MB_text_line1_x + (Msg_box_w - MB_split), MB_text_line1_y + 15);
+        display.fillRect(MB_text_line1_x + (Msg_box_w - MB_split + 1), MB_text_line1_y, MB_split - 8, MB_text_line1_h, ILI9341_BLACK);
+        display.print(value);
+      }
+      break;
+
+    case 2:
+      if (strlen(msg)!=0){
+        display.setCursor(MB_text_line2_x, MB_text_line2_y + 15);
+        display.fillRect(MB_text_line2_x, MB_text_line2_y, MB_text_line2_w, MB_text_line2_h, ILI9341_BLACK);
+        display.print(msg);
+      }
+      if (strlen(value)!=0){
+        display.setCursor(MB_text_line2_x + (Msg_box_w - MB_split), MB_text_line2_y + 15);
+        display.fillRect(MB_text_line2_x + (Msg_box_w - MB_split + 1), MB_text_line2_y, MB_split - 8, MB_text_line1_h, ILI9341_BLACK);
+        display.print(value);
+      }
+
+      break;
+
+    case 3:
+      if (strlen(msg)!=0){
+        display.setCursor(MB_text_line3_x, MB_text_line3_y + 15);
+        display.fillRect(MB_text_line3_x, MB_text_line3_y, MB_text_line3_w, MB_text_line3_h, ILI9341_BLACK);
+        display.print(msg);
+      }
+      if (strlen(value)!=0){
+        display.setCursor(MB_text_line3_x + (Msg_box_w - MB_split), MB_text_line3_y + 15);
+        display.fillRect(MB_text_line3_x + (Msg_box_w - MB_split + 1), MB_text_line3_y, MB_split - 8, MB_text_line3_h, ILI9341_BLACK);
+        display.print(value);
+      }
+
+      break;
+
+    case 4:
+      if (strlen(msg)!=0){
+        display.setCursor(MB_text_line4_x, MB_text_line4_y + 15);
+        display.fillRect(MB_text_line4_x, MB_text_line4_y, MB_text_line4_w, MB_text_line4_h, ILI9341_BLACK);
+        display.print(msg);
+      }
+      if (strlen(value)!=0){
+        display.setCursor(MB_text_line4_x + (Msg_box_w - MB_split), MB_text_line4_y + 15);
+        display.fillRect(MB_text_line4_x + (Msg_box_w - MB_split + 1), MB_text_line4_y, MB_split - 8, MB_text_line4_h, ILI9341_BLACK);
+        display.print(value);
+      }
+
+      break;
+  }
+
 }
 
-void display_Setback(){
-  clear_Msgbox();
-  display.setFont(&FreeSans9pt7b);
-  display.setCursor(Msg_box_origin_x + (Msg_box_w / 2)+5, Msg_box_origin_y + 25);
-  display.print(Night_set_temp,1);
-  display.print((char)247); // degree symbol
-  display.print("c");
-}
+void paint_screen(){
 
-void paint_screen()
-{
   display.setRotation(rotation);              // set the orientation of the screen
   display.fillScreen(ILI9341_BLACK);          // Clear the screen
 // Draw the screen outline
@@ -273,13 +304,14 @@ void paint_screen()
 // Draw the Message box
   display.drawRoundRect(Msg_box_x, Msg_box_y, Msg_box_w, Msg_box_h, radius, ILI9341_GREEN);
   display.setCursor(Msg_box_origin_x, Msg_box_origin_y);
-  display.setFont(&FreeSans9pt7b);      // in a smaller font display the remote temps
-  display.print("Set point: ");
-  display.setCursor(Msg_box_origin_x, Msg_box_origin_y + 25);
-  display.print("Set Back: ");
 
-  display_Setback();
-  display_Setpoint();
+// Display initial Text values in Text boxes along with any default settings for Values:
+
+  Msg_out(1, "Set point", dtostrf(Set_point, 4, 1, _value ));
+  Msg_out(2, "Set Back",  dtostrf(Set_back,  4, 1, _value ));
+  Msg_out(3, "Heating", "OFF");
+  Msg_out(4, "TBA", "0");
+
 }
 
 void reconnect() {
@@ -311,26 +343,65 @@ bool checkBound(float newValue, float prevValue, float maxDiff) {
          (newValue < prevValue - maxDiff || newValue > prevValue + maxDiff);
 }
 
-/*
-Remove this when yo ditch the encoder
-bool Encoder_reading(bool _changed) {
+void read_Buttons(){
+  btn_Up.read();
+  btn_Down.read();
 
-  long newPosition = myEnc.read();
-  Serial.println(newPosition);
-  if (newPosition != oldPosition)
-    { oldPosition = newPosition;
-      Set_point = newPosition;
-      Serial.println(Set_point);
-      _changed = 1;
-    }
-  else
-    { _changed= 0;}
+  if (btn_Up.wasPressed()) {
 
-  return _changed ;
+    Set_point = Set_point + 0.1 ;
+    Msg_out(1, "", dtostrf(Set_point, 4, 1, _value )); // display set_point
+
+  }
+
+  if (btn_Down.wasPressed()) {
+
+    Set_point = Set_point - 0.1 ;
+    Msg_out(1, "", dtostrf(Set_point, 4, 1, _value )); // display set_point
+  }
 
 }
-*/
 
+void heating_Control(){
+  if ((Current_temp < Set_point) & !Heating) {   // If heating isnt on and its colder than the current setpoint, turn it on
+    Serial.println("Heating going: ON");
+    Heating = true;
+    client.publish(publish_relay, "ON");              // Turn on remote relay
+    Msg_out(3, "", "ON");
+  }
+  else if ((Current_temp >= Set_point) & Heating) {
+    Serial.println("Heating going: OFF");
+    Heating = false;
+    client.publish(publish_relay, "OFF");              // Turn OFF remote relay
+    Msg_out(3, "", "OFF");
+  }
+
+}
+
+void read_Temperature(){
+
+  long now = millis();                          //  Only check the temp every 5 seconds
+  if (now - lastMsg > 5000) {
+
+    lastMsg = now;
+    sensors.requestTemperatures(); // Send the command to get temperatures
+    delay(100);
+    float newTemp = sensors.getTempCByIndex(0);
+
+       if (checkBound(newTemp, Current_temp, diff)) {      // check if the temp has changed, if it has, is it over or under the set point... action Heating relay accordingly
+
+          Current_temp = newTemp;
+          client.publish(publish_local_topic, String(Current_temp).c_str(), true);
+          display.setFont(&FreeSans24pt7b);
+          display.setTextColor(ILI9341_WHITE);
+          display.fillRect(Big_box_x+6, Big_box_y+6, Big_box_w-10, Big_box_h-10,ILI9341_BLACK); // Clear the display
+          display.setCursor(Big_box_origin_x + 15, Big_box_origin_y + 40);
+          display.print(Current_temp,1);
+          display.print((char)247); // degree symbol
+          display.println("c");
+    }
+  }
+}
 
 void setup() {
 
@@ -352,57 +423,11 @@ void loop() {
     reconnect();
   }
   client.loop();
-  // call sensors.requestTemperatures() to issue a global temperature
-  // request to all devices on the bus
-  sensors.requestTemperatures(); // Send the command to get temperatures
 
-  btn_Up.read();
-  btn_Down.read();
+  read_Buttons();
 
-  if (btn_Up.wasPressed()) {
+  read_Temperature();   // Reads the temperature, and checks if heating needs ot be on or off....
 
-    Set_point = Set_point + 0.1 ;
-    display_Setpoint();
+  heating_Control();
 
-  }
-
-  if (btn_Down.wasPressed()) {
-
-    Set_point = Set_point - 0.1 ;
-    display_Setpoint();
-  }
-
-  // After we got the temperatures, we can print them here.
-  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
-
-  //Serial.print("Temperature for the device 1 (index 0) is: ");
-  //Serial.println(sensors.getTempCByIndex(0),1);
-
-  // Now lets disply the result on the OLED and publish it to MQTT
-
-  long now = millis();                          //  Only check the temp every 5 seconds
-  if (now - lastMsg > 5000) {
-    lastMsg = now;
-
-  float newTemp = sensors.getTempCByIndex(0);
-
-
-   if (checkBound(newTemp, Current_temp, diff)) {      // check if the temp has changed
-      Current_temp = newTemp;
-      Serial.print("New temperature:");
-      Serial.println(String(Current_temp).c_str());
-      client.publish(publish_local_topic, String(Current_temp).c_str(), true);
-
-      display.setFont(&FreeSans24pt7b);
-      display.setTextColor(ILI9341_WHITE);
-
-      clear_Bigbox();
-      display.setCursor(Big_box_origin_x + 15, Big_box_origin_y + 40);
-      display.print(Current_temp,1);
-      display.print((char)247); // degree symbol
-      display.println("c");
-
-      delay(1000);
-    }
-  }
 }

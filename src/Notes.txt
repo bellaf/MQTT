@@ -17,7 +17,10 @@ D8 GPIO15: Free
 D0 GPIO16: Free
 
 Things to do:
-- Sort out clear value areas ONLY , not the painted areas.
+
 - set some button up and down limits for the setpoint, perhaps 10 degrees min, 30 degrees max? (See the example sketches for the
   JC_Button object
--
+
+- Using GPIO 2 in tandem for the DS1820, as well as the Btn Down ....  might need to inhibit temp reading when the button is in use....
+
+- Added MQTT Publish topic to turn on and off the virtual Heating control relay.....  NB, Topic is Case sensitive....
