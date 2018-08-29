@@ -4,10 +4,10 @@ Ref info:
 
 Wemos Pin assignments for thermostat:
 
-D3 GPIO0: btn_Up
-TX GPIO1:
+D3 GPIO0: btn_Up (Also the built-in LED, so thats why the ONewire isnt working well.)
+TX GPIO1: Not useable
 D4 GPIO2: btn_Down
-RX GPIO3:
+RX GPIO3: Not useable
 D2 GPIO4: CS (SPI Chip Select)
 D1 GPIO5: D/C (SPI Data / Command line)
 D6 GPIO12: MISO (SPI)
@@ -24,3 +24,4 @@ Things to do:
 - Using GPIO 2 in tandem for the DS1820, as well as the Btn Down ....  might need to inhibit temp reading when the button is in use....
 
 - Added MQTT Publish topic to turn on and off the virtual Heating control relay.....  NB, Topic is Case sensitive....
+- Code up a routine to read the state of the Sonoff Heating relay and set the status of the relay according to the ACTUAL Relay state. 

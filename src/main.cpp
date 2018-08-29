@@ -142,12 +142,12 @@ long  MB_text_line4_x = Msg_box_origin_x,
 long Up_button_x = Button_box_x + 3;
 long Up_button_y = Button_box_y + 3;
 long Up_button_w = Button_box_w - 6;
-long Up_button_h = Button_box_h / 2 - 6 ;
+long Up_button_h = (Button_box_h / 2) - 6 ;
 
 long Down_button_x = Button_box_x + 3;
 long Down_button_y = Up_button_y + Up_button_h + 3;
 long Down_button_w = Button_box_w - 6;
-long Down_button_h = Button_box_h / 2 - 6;
+long Down_button_h = (Button_box_h / 2) - 6;
 
 long Middle_up_x = Up_button_x + (Up_button_w / 2);
 long Middle_up_y = Up_button_y + (Up_button_h / 2);
@@ -289,13 +289,12 @@ void paint_screen(){
   display.drawRoundRect(Big_box_x, Big_box_y,Big_box_w, Big_box_h, radius, ILI9341_GREEN);
 // Draw the Button Outline
   display.drawRoundRect(Button_box_x, Button_box_y, Button_box_w, Button_box_h, radius, ILI9341_GREEN);
-
     // Draw the buttons
-    display.drawRoundRect(Up_button_x, Up_button_y, Up_button_w, Up_button_h, radius, ILI9341_DARKGREEN);
-    display.drawRoundRect(Down_button_x, Down_button_y, Down_button_w, Down_button_h, radius, ILI9341_DARKGREEN);
+    display.drawRoundRect(Up_button_x, Up_button_y, Up_button_w, Up_button_h, radius, ILI9341_GREEN);
+    display.drawRoundRect(Down_button_x, Down_button_y, Down_button_w, Down_button_h, radius, ILI9341_GREEN);
     // Now the arrows.....
-    display.fillTriangle(Middle_up_x - 20, Middle_up_y + 20, Middle_up_x ,Middle_up_y - 20, Middle_up_x + 20, Middle_up_y + 20, ILI9341_DARKGREEN);
-    display.fillTriangle(Middle_down_x - 20, Middle_down_y - 20, Middle_down_x + 20, Middle_down_y -20, Middle_down_x, Middle_down_y + 20, ILI9341_DARKGREEN);
+    display.fillTriangle(Middle_up_x - 20, Middle_up_y + 20, Middle_up_x ,Middle_up_y - 20, Middle_up_x + 20, Middle_up_y + 20, ILI9341_GREEN);
+    display.fillTriangle(Middle_down_x - 20, Middle_down_y - 20, Middle_down_x + 20, Middle_down_y -20, Middle_down_x, Middle_down_y + 20, ILI9341_GREEN);
 // Draw the Message box
   display.drawRoundRect(Msg_box_x, Msg_box_y, Msg_box_w, Msg_box_h, radius, ILI9341_GREEN);
   display.setCursor(Msg_box_origin_x, Msg_box_origin_y);
