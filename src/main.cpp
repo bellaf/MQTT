@@ -52,6 +52,8 @@ Written by Tony Bell (with help from lots of other clever people!)
 
 
 // Declare Variables here....
+// These are for the temp buttons....
+
 const byte
  up_Pin = 2,
  down_Pin = 0;
@@ -62,16 +64,16 @@ long lastMsg = 0;
 float Current_temp = 0.0;
 float Set_point = 18;         // Default Set points
 float Set_back = 14;          // Set night set point
-float diff = 0.2;
+float diff = 0.2;             // Difference required before displaying a new temperature
 float Temp1;
 float Temp2;
-char json[300];
-const char* Date; // must use const char*'s to extract strings from JSON object
-int rotation = 1;   // set the screen orientation mode
-long oldPosition  = -999;  // for Rotary encoder use....
-bool has_changed = 0; //  Has the encoder position changed?
-bool Night_set_back = 0;  // Default is NOT Night Setback mode
-bool Heating = 0;   //  0=FALSE=OFF 1=TRUE=on    -  Relay state to control the heating
+char json[300];               // JSON Buffer for parsing remote temp sense info
+const char* Date;             // must use const char*'s to extract strings from JSON object
+int rotation = 1;             // set the screen orientation mode
+long oldPosition  = -999;     // for Rotary encoder use....
+bool has_changed = 0;         //  Has the encoder position changed?
+bool Night_set_back = 0;      // Default is NOT Night Setback mode
+bool Heating = 0;             //  0=FALSE=OFF 1=TRUE=on    -  Relay state to control the heating
 
 // Now instatiate objects:
 
@@ -156,18 +158,14 @@ long Middle_down_y = Down_button_y + (Down_button_h / 2);
 void setup_wifi() {
   delay(10);
 
-  // text display tests
-  display.setRotation(rotation);
+  display.setRotation(rotation);              // Landscape mode
   display.setFont(&FreeSans9pt7b);            // Set the font
   display.setTextSize(1);
   display.setTextColor(ILI9341_WHITE);
-  display.setCursor(0,10);
-  Serial.println();
-  Serial.println("Connecting to: ");
-  Serial.print(wifi_ssid);
+  display.setCursor(0,15);                    // Remember, Cursor position for these fonts is not the same as rectangle.
   display.println("Connecting to: ");
   display.print(wifi_ssid);
-  //  ; only used on oled displays
+
   // We start by connecting to a WiFi network
 
   WiFi.begin(wifi_ssid, wifi_password);
@@ -175,17 +173,14 @@ void setup_wifi() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     display.print(".");
-    Serial.print(".");
-    //  ;
   }
 
-  yield();  // let the esp8266 think a bit
+  yield();                                    // let the esp8266 think a bit
   Serial.print("WiFi Connected, IP Address: ");
   Serial.println(WiFi.localIP());
   display.println("WiFi connected");
-  display.println("IP address: ");
+  display.print("IP address: ");
   display.println(WiFi.localIP());
-  //  ;
   delay(1000);
 
 }
