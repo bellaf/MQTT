@@ -45,8 +45,8 @@ Written by Tony Bell (with help from lots of other clever people!)
 #define mqtt_password "dune99"
 
 #define publish_local_topic "local/temperature"
-#define publish_relay "cmnd/Test/power4"
-#define subscribe_topic "tele/Test/SENSOR"          /// get temp readings from node called Test ...
+#define heating_control_topic "cmnd/Test/power4"            // Send the Relay command to a "sonoff" called Test...
+#define subscribe_topic "tele/Test/SENSOR"          // get temp readings from node called Test ...
 
 #define ONE_WIRE_BUS 2 // which pin the ds18b20 is on... D5=GPIO14, D0=GPIO16, D3=GPIO0
 
@@ -360,13 +360,13 @@ void heating_Control(){
   if ((Current_temp < Set_point) & !Heating) {   // If heating isnt on and its colder than the current setpoint, turn it on
     Serial.println("Heating going: ON");
     Heating = true;
-    client.publish(publish_relay, "ON");              // Turn on remote relay
+    client.publish(heating_control_topic, "ON");              // Turn on remote relay
     Msg_out(3, "", "ON");
   }
   else if ((Current_temp >= Set_point) & Heating) {
     Serial.println("Heating going: OFF");
     Heating = false;
-    client.publish(publish_relay, "OFF");              // Turn OFF remote relay
+    client.publish(heating_control_topic, "OFF");              // Turn OFF remote relay
     Msg_out(3, "", "OFF");
   }
 
