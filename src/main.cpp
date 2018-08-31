@@ -44,9 +44,7 @@ Written by Tony Bell (with help from lots of other clever people!)
 #define mqtt_user "admin"
 #define mqtt_password "dune99"
 
-#define publish_local_topic "local/temperature"
-#define heating_control_topic "cmnd/Test/power4"            // Send the Relay command to a "sonoff" called Test...
-#define subscribe_topic "tele/Test/SENSOR"          // get temp readings from node called Test ...
+
 
 #define ONE_WIRE_BUS 2 // which pin the ds18b20 is on... D5=GPIO14, D0=GPIO16, D3=GPIO0
 
@@ -57,6 +55,11 @@ Written by Tony Bell (with help from lots of other clever people!)
 const byte
  up_Pin = 2,
  down_Pin = 0;
+
+const char  *publish_temp_topic    = "tele/thermostat/temperature",
+            *heating_control_topic = "cmnd/boiler/POWER",    // Send the Relay command to a "sonoff" called boiler...
+            *heating_status_topic  = "stat/boiler/POWER1",    // Boiler relay state topic
+            *subscribe_topic       = "tele/Test/SENSOR";          // get temp readings from node called Test ... might not use this
 
 char _value[10]; // used to hold temp str buffer for dtostr() func
 
@@ -385,7 +388,7 @@ void read_Temperature(){
        if (checkBound(newTemp, Current_temp, diff)) {      // check if the temp has changed, if it has, is it over or under the set point... action Heating relay accordingly
 
           Current_temp = newTemp;
-          client.publish(publish_local_topic, String(Current_temp).c_str(), true);
+          client.publish(publish_temp_topic, String(Current_temp).c_str(), true);
           display.setFont(&FreeSans24pt7b);
           display.setTextColor(ILI9341_WHITE);
           display.fillRect(Big_box_x+6, Big_box_y+6, Big_box_w-10, Big_box_h-10,ILI9341_BLACK); // Clear the display
