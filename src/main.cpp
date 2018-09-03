@@ -61,7 +61,7 @@ const char  *publish_temp_topic    = "tele/thermostat/temperature",
             *heating_status_topic  = "stat/boiler/POWER1",    // Boiler relay state topic
             *subscribe_topic       = "tele/Test/SENSOR";          // get temp readings from node called Test ... might not use this
 
-char _value[10]; // used to hold temp str buffer for dtostr() func
+char _buffer[10]; // used to hold temp str buffer for dtostr() func
 
 long lastMsg = 0;
 float Current_temp = 0.0;
@@ -117,8 +117,8 @@ long  Msg_box_origin_x = Msg_box_x + 6,
       Msg_box_origin_y = Msg_box_y + 6;
 
 
-long Msg_box_value_x = Msg_box_origin_x + (Msg_box_w / 2)+5, Msg_box_value_y = Msg_box_origin_y,
-      Msg_box_value_w = (Msg_box_w / 2)+5, Msg_box_value_h = Msg_box_h ;
+long Msg_box_buffer_x = Msg_box_origin_x + (Msg_box_w / 2)+5, Msg_box_buffer_y = Msg_box_origin_y,
+      Msg_box_buffer_w = (Msg_box_w / 2)+5, Msg_box_buffer_h = Msg_box_h ;
 
 long  MB_text_line1_x = Msg_box_origin_x,
       MB_text_line1_y = Msg_box_origin_y,
@@ -304,8 +304,8 @@ void paint_screen(){
 
 // Display initial Text values in Text boxes along with any default settings for Values:
 
-  Msg_out(1, "Set point", dtostrf(Set_point, 4, 1, _value ));
-  Msg_out(2, "Set Back",  dtostrf(Set_back,  4, 1, _value ));
+  Msg_out(1, "Set point", dtostrf(Set_point, 4, 1, _buffer ));
+  Msg_out(2, "Set Back",  dtostrf(Set_back,  4, 1, _buffer ));
   Msg_out(3, "Heating", "OFF");
   Msg_out(4, "TBA", "0");
 
@@ -347,14 +347,14 @@ void read_Buttons(){
   if (btn_Up.wasPressed()) {
 
     Set_point = Set_point + 0.1 ;
-    Msg_out(1, "", dtostrf(Set_point, 4, 1, _value )); // display set_point
+    Msg_out(1, "", dtostrf(Set_point, 4, 1, _buffer )); // display set_point
 
   }
 
   if (btn_Down.wasPressed()) {
 
     Set_point = Set_point - 0.1 ;
-    Msg_out(1, "", dtostrf(Set_point, 4, 1, _value )); // display set_point
+    Msg_out(1, "", dtostrf(Set_point, 4, 1, _buffer )); // display set_point
   }
 
 }
